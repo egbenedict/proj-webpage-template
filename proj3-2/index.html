@@ -1,7 +1,209 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Your Name  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3-2: Additional Features to PathTracer</h1>
+    <h2 align="middle">Uri Kreindler</h2>
+    <h2 align="middle"><a href="https://egbenedict.github.io/proj-webpage-template/proj3-2/index.html">https://egbenedict.github.io/proj-webpage-template/proj3-2/index.html</a></h2>
+
+    <div class="padded">
+
+        
+        * NOTE: For this project, you will choose TWO out of the four given parts to complete. One of those parts must be Part 1 or Part 2. In other words, you can choose any combination of two parts except the pair (Part 3, Part 4).
+
+        <h3 align="middle">Overview</h3>
+        <p>
+            In this extension to Project 3-1, I chose to implement parts 1 and 4: Mirror and Glass Materials, and Depth of Field. 
+            For the former part, I implemented code to both reflect and refract light, and then used Schlick's approximation to decide
+            how light passing through glass would behave. For the latter part, I just needed to make slight modifications to my
+            ray generating algorithm, mainly adding a step where I sample from the thin lens and calculate rays going from the image to the focal plane via
+            the lens.
+        </p>
+
+
+        <h3 align="middle">Part 1. Mirror and Glass Materials</h3>
+
+        <p>
+            In this part, I first implemented the <code>BSDF::reflect()</code> function, which simply reflects a vector about a surface normal.
+            Then I added support for mirror material by implementing <code>MirrorBSDF::sample_f()</code>. Next, I wrote code
+            to refract light with a given index of refraction. Lastly, I 
+            added support for glass material by implementing <code>GlassBSDF::sample_f()</code>, which involved computing and using
+            Schlick's approximation.
+        </p>
+
+        <p><b>
+            Show a sequence of six images of scene `CBspheres.dae` rendered with `max_ray_depth` set to 0, 1, 2, 3, 4, 5, and 100. The other settings should be at least 64 samples per pixel and 4 samples per light. Make sure to include all screenshots.
+        </b></p>
+        <div align="middle">
+            <table style="width:100%">
+              <tr align="center">
+                <td>
+                  <img src="CBspheres0.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 0</figcaption>
+                </td>
+                <td>
+                  <img src="CBspheres1.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 1</figcaption>
+                </td>
+              </tr>
+              <tr align="center">
+                <td>
+                  <img src="CBspheres2.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 2</figcaption>
+                </td>
+                <td>
+                  <img src="CBspheres3.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 3</figcaption>
+                </td>
+              </tr>
+              <tr align="center">
+                <td>
+                  <img src="CBspheres4.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 4</figcaption>
+                </td>
+                <td>
+                  <img src="CBspheres5.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 5</figcaption>
+                </td>
+              </tr>
+              <tr align="center">
+                <td>
+                  <img src="CBspheres100.png" align="middle" width="400px"/>
+                  <figcaption>max_ray_depth = 100</figcaption>
+                </td>
+              </tr>
+            </table>
+          </div>
+        <br>
+        <p><b>
+            Point out the new multibounce effects that appear in each image. 
+        </b></p>
+        <p>
+            With a max depth of 0, we only see the light source. With a max depth of 1, we see the walls and floor illuminated,
+            as well as a reflection of the light source in the spheres. With a max depth of 2, we now see the reflections
+            in the mirror sphere, as well as softer shadows. With a max depth of 3, we see the refracted light coming through
+            the glass sphere, as well as softer shadows and an illuminated ceiling in the mirror sphere's surface.
+            With a max depth of 4, we see the glass ball illuminated in the mirror sphere's surface, as well as a glint of light
+            on the right wall coming through the glass sphere. With a max depth of 5, we see shadows further softened. 
+            With a max depth of 100, we see even further softened shadows, as well as generally a more brightly-lit scene.
+        </p>
+        <br>
+        <p><b>
+            Explain how these bounce numbers relate to the particular effects that appear. Make sure to include all screenshots.
+        </b></p>
+        <p>
+            With max depth 0, we only see light coming directly from a light source, hence only the actual light itself. With 
+            max depth 1, we can now see light that bounces once off of a surface, hence all the areas that are directly illuminated
+            by the light source. With max depth 2, we can see light that has bounced twice, which is why we can now see
+            the reflections on the mirror sphere, as well as the softer shadows. With max depth 3, we see the refracted light through the
+            glass sphere because it has bounced 3 times: off the walls/other surfaces, off the glass sphere upon entry, and off the glass sphere
+            upon exit. We also see the ceiling in the mirror's reflection because that is light that has bounced 3 times: off the walls/other surfaces,
+            off the ceiling, and off the mirror sphere. With max depth 4, The glass ball is illmuinated in the mirror's surface because we have one more bounce
+            of the depth 3 rays from before that illuminated the glass sphere. We also see the glint of light on the right wall caused by light coming
+            through the glass ball and bouncing off the wall. With max depth 5 and 100, we see softer shadows simply because we are accumulating 
+            more rays of light through weird bouncing paths, and this makes the scene brighter overall.
+        </p>
+        <br>
+
+        <h3 align="middle">Part 4. Depth of Field</h3>
+
+        <p>
+            In this part, I implemented <code>Camera::generate_ray_for_thin_lens()</code>. This function 
+            generates a ray from the current pixel to the focal plane, and then uniformly samples the thin 
+            lens to create a vector from the lens to the intersection point on the focal plane (that is then normalized
+            and converted to world coordinates).
+        </p>
+
+        <p><b>
+            In a few sentences, explain the differences between a pinhole camera model and a thin-lens camera model. 
+        </b></p>
+        <p>
+            In a pinhole camera model, all light rays pass through a single point and thus everything is in focus because
+            there is a 1-1 mapping between the image and focal planes. On the other hand, with a thin-lens camera model,
+            multiple rays of light from the image plane can reach the same point on the focal plane by passing through
+            different points on the lens and refracting. In this model, objects are only in focus if they are at 
+            the correct focal distance from the lens; otherwise they are blurry.
+        </p>
+        <br>
+        <p><b>
+            Show a "focus stack" where you focus at 4 visibly different depths through a scene. Make sure to include all screenshots.
+        </b></p>
+        <p>
+            The following 4 images show CBdragon.dae rendered at different focal distances. For all images, I used a lens radius of 0.23.
+        </p>
+        <div align="middle">
+            <table style="width:100%">
+              <tr align="center">
+                <td>
+                  <img src="CBdragonD35B023small.png" align="middle" width="400px"/>
+                  <figcaption>focal distance = 3.5</figcaption>
+                </td>
+                <td>
+                  <img src="CBdragonD45B023small.png" align="middle" width="400px"/>
+                  <figcaption>focal distance = 4.5</figcaption>
+                </td>
+              </tr>
+              <tr align="center">
+                <td>
+                  <img src="CBdragonD5B023small.png" align="middle" width="400px"/>
+                  <figcaption>focal distance = 5</figcaption>
+                </td>
+                <td>
+                  <img src="CBdragonD55B023small.png" align="middle" width="400px"/>
+                  <figcaption>focal distance = 5.5</figcaption>
+                </td>
+              </tr>
+              </tr>
+            </table>
+          </div>
+        <br>
+        <p><b>
+            Show a sequence of 4 pictures with visibly different aperture sizes, all focused at the same point in a scene. Make sure to include all screenshots.
+        </b></p>
+        <p>
+            The following 4 images show CBdragon.dae rendered with different aperture sizes. For all images, I used a focal distance of 4.5.
+        </p>
+        <div align="middle">
+            <table style="width:100%">
+              <tr align="center">
+                <td>
+                  <img src="CBdragonB005small.png" align="middle" width="400px"/>
+                  <figcaption>lens radius = 0.05</figcaption>
+                </td>
+                <td>
+                  <img src="CBdragonB025small.png" align="middle" width="400px"/>
+                  <figcaption>lens radius = 0.25</figcaption>
+                </td>
+              </tr>
+              <tr align="center">
+                <td>
+                  <img src="CBdragonB05small.png" align="middle" width="400px"/>
+                  <figcaption>lens radius = 0.50</figcaption>
+                </td>
+                <td>
+                  <img src="CBdragonB1small.png" align="middle" width="400px"/>
+                  <figcaption>lens radius = 1.00</figcaption>
+                </td>
+              </tr>
+              </tr>
+            </table>
+          </div>
+        <br>
+
+    </div>
+</body>
 </html>
+
