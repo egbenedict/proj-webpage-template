@@ -1,7 +1,364 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Uri Kreindler</h2>
+<h2 align="middle">Team: kaseymeep</h2>
+<h2 align="middle">Website URL: <a href="https://egbenedict.github.io/proj-webpage-template/proj4/index.html">https://egbenedict.github.io/proj-webpage-template/proj4/index.html</a></h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>In this project, I completed the implementation of a realistic cloth simulator.
+  The simulator uses a mass-spring system and collision detection to model interactions with spheres, planes, and itself.
+  Verlet integration is used for simulating the cloth's motion. In the last part of this project, I implemented
+  several GLSL shaders: diffuse, Blinn-Phong, texture, bump, displacement, and mirror.
+</p>
+
+<h2 align="middle">Part I: Masses and springs</h2>
+<p>In this part, I simply created a basic model of a cloth represented by a sheet/grid of point-masses connected by various
+  types of springs. The three types of springs used are structural, shearing, and bending springs. I stored these
+  masses and springs in their own respective vector lists.
+</p>
+
+<h3>Take some screenshots of scene/pinned2.json from a viewing angle where you can clearly see the cloth wireframe to show the structure of your point masses and springs.</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img1.png" align="middle" width="600vw" />
+      </td>
+      <td>
+        <img src="img2.png" align="middle" width="600vw" />
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h3>Show us what the wireframe looks like (1) without any shearing constraints, (2) with only shearing constraints, and (3) with all constraints.</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img3.png" align="middle" width="400vw" />
+        <figcaption>No shearing</figcaption>
+      </td>
+      <td>
+        <img src="img4.png" align="middle" width="400vw" />
+        <figcaption>Only shearing</figcaption>
+      </td>
+      <td>
+        <img src="img2.png" align="middle" width="400vw" />
+        <figcaption>All constraints</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2 align="middle">Part II: Simulation via numerical integration</h2>
+
+<p>In this part, I first computed the total force acting on each point mass. This involved using Newton's Second Law
+  to find the total external force and Hooke's Law to determine the spring force acting on the mass. Then
+  I used Verlet integration to compute each mass's change in position due to the forces exterted on it. Lastly, to make
+  the simulation more realistic, I added a constraint to the springs ensuring they do not deform an unreasonable amount. </p>
+
+<h3>Experiment with some of the parameters in the simulation. To do so, pause the simulation at the start with P, modify the values of interest, and then resume by pressing P again. You can also restart the simulation at any time from the cloth's starting position by pressing R.</h3>
+<h4>Describe the effects of changing the spring constant <code>ks</code>; how does the cloth behave from start to rest with a very low <code>ks</code>? A high <code>ks</code>?</h4>
+<p>A low <code>ks</code> value causes the cloth to behave more ripply, like fine silk. A high <code>ks</code>
+value makes the cloth more rigid and stiff.</p>
+<h4>What about for <code>density</code>?</h4>
+<p>Conversely to the previous answer, a low <code>density</code> value makes the cloth more rigid and stiff, while
+a high value makes it ripply and silk-like.</p>
+<h4>What about for <code>damping</code>?</h4>
+<p>A low <code>damping</code> value causes the cloth to fall with a greater velocity and consequently take longer to come to rest.
+A high value for <code>damping</code> makes the cloth fall slowly and come to rest quickly without swaying back and forth.</p>
+<h4>For each of the above, observe any noticeable differences in the cloth compared to the default parameters and show us some screenshots of those interesting differences and describe when they occur.</h4>
+<p>A low spring constant means the springs exert less force, in turn allowing the cloth to flow more freely. Thus, a higher
+  spring constant accomplishes the opposite, making the springs more tense and thus the cloth more stiff. A low density
+  means the cloth has less mass, which increases the spring forces because there is greater distance between neighboring point masses.
+  Thus, a high density accomplishes the opposite effect. A low damping value allows the point masses in the cloth
+  to travel further each timestep, and hence the cloth falls faster and takes longer to come to rest. A high damping value
+  achieves the opposite effect.
+</p>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img5.png" align="middle" width="400vw" />
+        <figcaption>Low spring constant</figcaption>
+      </td>
+      <td>
+        <img src="img6.png" align="middle" width="400vw" />
+        <figcaption>High spring constant</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img7.png" align="middle" width="400vw" />
+        <figcaption>Low density</figcaption>
+      </td>
+      <td>
+        <img src="img8.png" align="middle" width="400vw" />
+        <figcaption>High density</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img10.png" align="middle" width="400vw" />
+        <figcaption>Low damping (cloth goes flying)</figcaption>
+      </td>
+      <td>
+        <img src="img11.png" align="middle" width="400vw" />
+        <figcaption>High damping (cloth calmly falls to rest)</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h3>Show us a screenshot of your shaded cloth from scene/pinned4.json in its final resting state! If you choose to use different parameters than the default ones, please list them.</h3>
+<img src="img12.png" align="middle" width="600vw" />
+<figcaption>(Default parameters)</figcaption>
+
+<h2 align="middle">Part III: Handling collisions with other objects</h2>
+<p>In this part I added support for cloth collisions with spheres and planes. Essentially, for each object,
+  I have a function that checks whether a given point mass intersects with it, and if it does, it shifts the mass's
+  position to very slightly above the surface of the object. Then, when simulating the cloth, I just need
+  to loop over every point mass and call this method to accurately model collisions.
+</p>
+
+<h3>Show us screenshots of your shaded cloth from scene/sphere.json in its final resting state on the sphere using the default <code>ks</code> = 5000 as well as with <code>ks</code> = 500 and <code>ks</code> = 50000. Describe the differences in the results.</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img13.png" align="middle" width="600vw" />
+        <figcaption>ks = 5000</figcaption>
+      </td>
+      <td>
+        <img src="img14.png" align="middle" width="600vw" />
+        <figcaption>ks = 500</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img15.png" align="middle" width="600vw" />
+        <figcaption>ks = 50000</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>It can clearly be seen that with a lower spring constant, the cloth is droopier/more ripply. With a higher spring constant, the cloth
+  is more rigid and stiff, and thus extrudes outward more in its final resting state on the sphere.
+</p>
+<h3>Show us a screenshot of your shaded cloth lying peacefully at rest on the plane. If you haven't by now, feel free to express your colorful creativity with the cloth! (You will need to complete the shaders portion first to show custom colors.)</h3>
+<img src="img16.png" align="middle" width="600vw" />
+
+
+<h2 align="middle">Part IV: Handling self-collisions</h2>
+<p>In this part I added support for cloth self-collisions, enabling the cloth to fall/fold in on itself. To do this,
+  first I create a spatial hash of the whole environment, so that for any given point mass,
+  I can efficiently find a relatively small list of all nearby point-masses. Then, for each point mass,
+  I loop over all these nearby masses and apply a repulsive force (an increase in distance between) if one of the 
+  nearby masses is too close to the current mass.
+</p>
+
+<h3>Show us at least 3 screenshots that document how your cloth falls and folds on itself, starting with an early, initial self-collision and ending with the cloth at a more restful state (even if it is still slightly bouncy on the ground).</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img17.png" align="middle" width="400vw" />
+        <figcaption>1</figcaption>
+      </td>
+      <td>
+        <img src="img18.png" align="middle" width="400vw" />
+        <figcaption>2</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img19.png" align="middle" width="400vw" />
+        <figcaption>3</figcaption>
+      </td>
+      <td>
+        <img src="img20.png" align="middle" width="400vw" />
+        <figcaption>4</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h3>Vary the <code>density</code> as well as <code>ks</code> and describe with words and screenshots how they affect the behavior of the cloth as it falls on itself.</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img21.png" align="middle" width="400vw" />
+        <figcaption>Low density (during fall)</figcaption>
+      </td>
+      <td>
+        <img src="img22.png" align="middle" width="400vw" />
+        <figcaption>Low density (near rest)</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img23.png" align="middle" width="400vw" />
+        <figcaption>High density (during fall)</figcaption>
+      </td>
+      <td>
+        <img src="img24.png" align="middle" width="400vw" />
+        <figcaption>High density (near rest)</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img25.png" align="middle" width="400vw" />
+        <figcaption>Low ks</figcaption>
+      </td>
+      <td>
+        <img src="img26.png" align="middle" width="400vw" />
+        <figcaption>High ks</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>As can be seen above, once again a low density causes the cloth to be more rigid and stiff, while a high density makes it ripple more.
+  Conversely, a low ks value causes more ripples while a high ks value causes more rigidity.
+</p>
+
+<h2 align="middle">Part V: Shaders</h2>
+<p>In this part, I implemented 6 different GLSL shaders: diffuse, Blinn-Phong, texture, bump, displacement, and mirror.
+  Each shader consists of a vertex shader, which computes all per-vertex values, and a fragment shader,
+  which computes the the final pixel colors based on the output of the vertex shader. Most of the work I did
+  was in the fragment shaders, using physics equations to model different lighting effects.
+</p>
+
+<h3>Explain in your own words what is a shader program and how vertex and fragment shaders work together to create lighting and material effects.</h3>
+<p>
+  As explained above, a shader program is divided into two parts, a vertex shader and a fragment shader. 
+  The vertex shader computes all per-vertex values, while the fragment shader takes in these values as input and 
+  outputs the final pixel colors. The fragment shaders utilize various physics equations to model different
+  lighting effects.
+</p>
+
+<h3>Explain the Blinn-Phong shading model in your own words. Show a screenshot of your Blinn-Phong shader outputting only the ambient component, a screen shot only outputting the diffuse component, a screen shot only outputting the specular component, and one using the entire Blinn-Phong model.</h3>
+<p>
+  The Blinn-Phong shading model is an equation that combines ambient light, diffuse light, and specular light to create a photo-realistic
+  lighting effect. 
+</p>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img27.png" align="middle" width="400vw" />
+        <figcaption>Ambient</figcaption>
+      </td>
+      <td>
+        <img src="img28.png" align="middle" width="400vw" />
+        <figcaption>Diffuse</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img29.png" align="middle" width="400vw" />
+        <figcaption>Specular</figcaption>
+      </td>
+      <td>
+        <img src="img30.png" align="middle" width="400vw" />
+        <figcaption>Entire Blinn-Phong</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h3>Show a screenshot of your texture mapping shader using your own custom texture by modifying the textures in /textures/.</h3>
+<img src="img32.png" align="middle" width="600vw" />
+<h3>Show a screenshot of bump mapping on the cloth and on the sphere. Show a screenshot of displacement mapping on the sphere. Use the same texture for both renders. You can either provide your own texture or use one of the ones in the textures directory, BUT choose one that's not the default texture_2.png. Compare the two approaches and resulting renders in your own words. Compare how your the two shaders react to the sphere by changing the sphere mesh's coarseness by using -o 16 -a 16 and then -o 128 -a 128.</h3>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img33.png" align="middle" width="600vw" />
+        <figcaption>Aluminum foil wrinkle texture on cloth and sphere with bump mapping</figcaption>
+      </td>
+      <td>
+        <img src="img34.png" align="middle" width="600vw" />
+        <figcaption>Aluminum foil wrinkle texture on sphere with bump mapping</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img35.png" align="middle" width="600vw" />
+        <figcaption>Aluminum foil wrinkle texture with displacement mapping</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Bump mapping simply modifies the lighting effect on the cloth based on the texture to make ridges more defined as if they were extruding,
+  although without actually modifying the geometry of the cloth. Displacement mapping, on the other hand,
+  actually changes the geometry of the cloth based on a height map so that ridge/peak-like ares are raised and valley-like ares are depressed.
+</p>
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="img36.png" align="middle" width="400vw" />
+        <figcaption>Coarseness 16, bump shader</figcaption>
+      </td>
+      <td>
+        <img src="img37.png" align="middle" width="400vw" />
+        <figcaption>Coarseness 16, displacement shader</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="img38.png" align="middle" width="400vw" />
+        <figcaption>Coarseness 128, bump shader</figcaption>
+      </td>
+      <td>
+        <img src="img39.png" align="middle" width="400vw" />
+        <figcaption>Coarseness 128, displacement shader</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>To be totally honest, I do not see too much of a difference between the reactions to the sphere. Clearly the bump shader cloth
+  better conforms to the sphere's geometry because it is smoother, but the displacement shader cloth also does pretty well. This
+  is most likely just due to the fact that the specific texture I chose does not display well any very large bumps whose displacement
+  would significantly alter the cloth's geometry to the point where it doesn't conform as well to the sphere.
+</p>
+
+<h3>Show a screenshot of your mirror shader on the cloth and on the sphere.</h3>
+<img src="img40.png" align="middle" width="600vw" />
+</body>
 </html>
